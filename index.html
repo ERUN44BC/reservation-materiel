@@ -136,11 +136,11 @@ async function init() {
 }
 
 /* Méthode 1 : événement ready de grist */
+grist.ready({ requiredAccess: "full" });
 grist.on("ready", init);
-
-/* Méthode 2 : fallback si l'événement ne se déclenche pas */
-setTimeout(init, 1500);
-
+grist.docApi.fetchTable("Ecoles").then(() => init()).catch(() => {});
+setTimeout(init, 2000);
+ 
 /* ---- Chargement des tables ---- */
 async function chargerDonnees() {
   const [tEcoles, tMat, tPer, tEmp] = await Promise.all([
