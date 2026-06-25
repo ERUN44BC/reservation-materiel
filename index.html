@@ -156,7 +156,7 @@ let initDone = false;
 /* Grist stocke les dates en jours depuis epoch */
 function fmt(j) {
   if (!j) return "?";
-  const d = new Date(j * 86400 * 1000);
+  const d = new Date(j * 1000);
   return isNaN(d) ? "?" : d.toLocaleDateString("fr-FR");
 }
 
