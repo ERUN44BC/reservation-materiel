@@ -33,9 +33,9 @@
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .dispo-box { margin-top: 8px; padding: 10px 14px; border-radius: var(--radius); font-size: 13px; display: none; align-items: flex-start; gap: 8px; line-height: 1.5; }
   .dispo-box.visible { display: flex; }
-  .dispo-box.ok  { background: var(--c-ok-bg);   color: var(--c-ok); }
-  .dispo-box.warn{ background: var(--c-warn-bg);  color: var(--c-warn); }
-  .dispo-box.err { background: var(--c-err-bg);   color: var(--c-err); }
+  .dispo-box.ok   { background: var(--c-ok-bg);   color: var(--c-ok); }
+  .dispo-box.warn { background: var(--c-warn-bg);  color: var(--c-warn); }
+  .dispo-box.err  { background: var(--c-err-bg);   color: var(--c-err); }
   .dispo-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
   .dispo-text strong { display: block; font-weight: 600; margin-bottom: 2px; }
   .btn-submit { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; font-family: inherit; color: #fff; background: var(--c-accent); border: none; border-radius: var(--radius); cursor: pointer; transition: opacity 0.15s; }
@@ -65,7 +65,7 @@
   </div>
 
   <div class="alert err" id="alert-err" style="display:none;"></div>
-  <div class="alert info" id="alert-info"><div class="spinner"></div> Chargement des données Grist…</div>
+  <div class="alert info" id="alert-info"><div class="spinner"></div>&nbsp;Chargement des données Grist…</div>
 
   <div id="form-section" style="display:none;">
     <div class="card">
@@ -120,7 +120,7 @@ let disponibiliteOk = false;
 let conflitDetecte = false;
 let initDone = false;
 
-/* ---- Init Grist : double mécanisme pour compatibilité ---- */
+/* ---- Init Grist ---- */
 grist.ready({ requiredAccess: "full" });
 
 async function init() {
@@ -131,16 +131,15 @@ async function init() {
     document.getElementById("alert-info").style.display = "none";
     document.getElementById("form-section").style.display = "block";
   } catch(e) {
+    initDone = false;
     afficherErreur("Impossible de charger les données : " + e.message);
   }
 }
 
-/* Méthode 1 : événement ready de grist */
-grist.ready({ requiredAccess: "full" });
 grist.on("ready", init);
 grist.docApi.fetchTable("Ecoles").then(() => init()).catch(() => {});
 setTimeout(init, 2000);
- 
+
 /* ---- Chargement des tables ---- */
 async function chargerDonnees() {
   const [tEcoles, tMat, tPer, tEmp] = await Promise.all([
@@ -150,39 +149,49 @@ async function chargerDonnees() {
     grist.docApi.fetchTable("Emprunts")
   ]);
 
+  /* Ecoles — champ Nom_Ecole */
   ecoles = tEcoles.id.map((id, i) => ({
-    id, nom: tEcoles.Ecole[i] || ""
+    id,
+    nom: tEcoles.Nom_Ecole[i] || ""
   })).sort((a,b) => a.nom.localeCompare(b.nom, "fr"));
 
+  /* Matériels */
   materiels = tMat.id.map((id, i) => ({
     id,
     nom: tMat.Materiel[i] || "",
     quantite: tMat.Quantite[i] || 0,
-    dispo: tMat.Quantite_disponible ? (tMat.Quantite_disponible[i] ?? tMat.Quantite[i]) : tMat.Quantite[i]
+    dispo: tMat.Quantite_disponible
+      ? (tMat.Quantite_disponible[i] ?? tMat.Quantite[i])
+      : tMat.Quantite[i]
   })).sort((a,b) => a.nom.localeCompare(b.nom, "fr"));
 
+  /* Périodes */
   periodes = tPer.id.map((id, i) => ({
     id,
     libelle: tPer.Libelle[i] || "",
     debut: tPer.Date_debut ? tPer.Date_debut[i] : null,
-    fin: tPer.Date_fin ? tPer.Date_fin[i] : null
+    fin:   tPer.Date_fin   ? tPer.Date_fin[i]   : null
   }));
 
+  /* Emprunts — pour vérif disponibilité en local */
   emprunts = tEmp.id.map((id, i) => ({
     id,
-    materiel: tEmp.Materiel[i],
+    materiel:    tEmp.Materiel[i],
     emprunte_le: tEmp.Emprunte_le[i],
-    retour_prevu: tEmp.Date_retour_prevue[i],
-    rendu: tEmp.Rendu[i]
+    retour_prevu:tEmp.Date_retour_prevue[i],
+    rendu:       tEmp.Rendu[i]
   }));
 
   remplirSelect("f-ecole",    ecoles,    e => ({ val: e.id, label: e.nom }));
-  remplirSelect("f-materiel", materiels, m => ({ val: m.id, label: m.nom + " (" + m.dispo + "/" + m.quantite + " dispo.)" }));
+  remplirSelect("f-materiel", materiels, m => ({
+    val: m.id,
+    label: m.nom + " (" + m.dispo + "/" + m.quantite + " dispo.)"
+  }));
   remplirSelect("f-periode",  periodes,  p => ({ val: p.id, label: p.libelle }));
 
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("f-debut").min = today;
-  document.getElementById("f-fin").min = today;
+  document.getElementById("f-fin").min   = today;
 }
 
 function remplirSelect(id, items, mapper) {
@@ -208,7 +217,7 @@ function verifierDisponibilite() {
     disponibiliteOk = false; conflitDetecte = false; majBouton(); return;
   }
 
-  const mat = materiels.find(m => m.id === matId);
+  const mat     = materiels.find(m => m.id === matId);
   const debutTs = Math.floor(new Date(debut).getTime() / 1000);
   const finTs   = Math.floor(new Date(fin).getTime() / 1000);
 
@@ -222,13 +231,16 @@ function verifierDisponibilite() {
   conflitDetecte = dispo <= 0;
 
   if (dispo <= 0) {
-    afficherDispo("err", "✕", "Matériel indisponible", "Les " + mat.quantite + " exemplaire(s) sont réservés sur cette période. Choisissez d'autres dates.");
+    afficherDispo("err", "✕", "Matériel indisponible",
+      "Les " + mat.quantite + " exemplaire(s) sont réservés sur cette période. Choisissez d'autres dates.");
     disponibiliteOk = false;
   } else if (dispo === 1) {
-    afficherDispo("warn", "⚠", "Dernière unité disponible", "Il reste 1 exemplaire sur " + mat.quantite + ". Confirmez rapidement.");
+    afficherDispo("warn", "⚠", "Dernière unité disponible",
+      "Il reste 1 exemplaire sur " + mat.quantite + ". Confirmez rapidement.");
     disponibiliteOk = true;
   } else {
-    afficherDispo("ok", "✓", "Disponible", dispo + " exemplaire(s) disponible(s) sur " + mat.quantite + " pour cette période.");
+    afficherDispo("ok", "✓", "Disponible",
+      dispo + " exemplaire(s) disponible(s) sur " + mat.quantite + " pour cette période.");
     disponibiliteOk = true;
   }
   majBouton();
@@ -245,7 +257,7 @@ function cacherDispo() {
   disponibiliteOk = false; majBouton();
 }
 
-/* ---- Validation ---- */
+/* ---- Validation bouton ---- */
 function majBouton() {
   const complet =
     document.getElementById("f-nom").value.trim() &&
@@ -256,7 +268,8 @@ function majBouton() {
     document.getElementById("f-periode").value;
   const btn = document.getElementById("btn-submit");
   btn.disabled = !(complet && disponibiliteOk && !conflitDetecte);
-  btn.textContent = conflitDetecte ? "Matériel indisponible sur cette période"
+  btn.textContent = conflitDetecte
+    ? "Matériel indisponible sur cette période"
     : (complet && disponibiliteOk ? "Envoyer la demande" : "Remplissez tous les champs");
 }
 
@@ -275,28 +288,21 @@ async function soumettre() {
   const finTs     = Math.floor(new Date(fin).getTime() / 1000);
 
   try {
-    const enseignantId = await trouverOuCreerEnseignant(nom, ecoleId);
+    /* Enseignant = champ Text direct dans Emprunts */
     await grist.docApi.applyUserActions([["AddRecord", "Emprunts", null, {
-      Enseignant: enseignantId, Ecole: ecoleId, Materiel: matId,
-      Periode: periodeId, Emprunte_le: debutTs, Date_retour_prevue: finTs, Rendu: false
+      Enseignant: nom,
+      Ecole:      ecoleId,
+      Materiel:   matId,
+      Periode:    periodeId,
+      Emprunte_le:        debutTs,
+      Date_retour_prevue: finTs,
+      Rendu: false
     }]]);
     afficherConfirmation(nom, ecoleId, matId, periodeId, debut, fin);
   } catch(e) {
     btn.disabled = false; btn.textContent = "Envoyer la demande";
     afficherErreur("Erreur lors de l'enregistrement : " + e.message);
   }
-}
-
-async function trouverOuCreerEnseignant(nom, ecoleId) {
-  const tEns = await grist.docApi.fetchTable("Enseignants");
-  const idx = tEns.Nom.findIndex((n, i) =>
-    n && n.toLowerCase() === nom.toLowerCase() && tEns.Ecole[i] === ecoleId
-  );
-  if (idx !== -1) return tEns.id[idx];
-  const result = await grist.docApi.applyUserActions([
-    ["AddRecord", "Enseignants", null, { Nom: nom, Ecole: ecoleId }]
-  ]);
-  return result.retValues[0];
 }
 
 /* ---- Confirmation ---- */
@@ -311,13 +317,16 @@ function afficherConfirmation(nom, ecoleId, matId, periodeId, debut, fin) {
     ligne("Enseignant(e)", nom) + ligne("École", ecole) + ligne("Matériel", mat) +
     ligne("Période", per) + ligne("Du", fmt(debut)) + ligne("Au", fmt(fin));
 }
-function ligne(l, v) { return '<div class="confirm-row"><span>'+l+'</span><span>'+v+'</span></div>'; }
+function ligne(l, v) {
+  return '<div class="confirm-row"><span>' + l + '</span><span>' + v + '</span></div>';
+}
 
 /* ---- Réinitialisation ---- */
 function reinitialiser() {
   document.getElementById("form-section").style.display = "block";
   document.getElementById("confirm-card").classList.remove("visible");
-  ["f-nom","f-ecole","f-materiel","f-debut","f-fin","f-periode"].forEach(id => document.getElementById(id).value = "");
+  ["f-nom","f-ecole","f-materiel","f-debut","f-fin","f-periode"]
+    .forEach(id => document.getElementById(id).value = "");
   cacherDispo(); disponibiliteOk = false; conflitDetecte = false; majBouton();
 }
 
