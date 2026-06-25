@@ -36,8 +36,12 @@
   .periode-info { display: none; margin-top: 8px; padding: 8px 12px; background: var(--c-accent-bg); border-radius: var(--radius); font-size: 13px; color: var(--c-accent); }
   .periode-info.visible { display: block; }
 
-  /* Grille matériels */
-  .materiel-grid { display: flex; flex-direction: column; gap: 8px; }
+  /* Catégorie header */
+  .cat-header { font-size: 12px; font-weight: 600; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 6px; display: flex; align-items: center; justify-content: space-between; }
+  .cat-quota-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: var(--c-accent-bg); color: var(--c-accent); text-transform: none; letter-spacing: 0; }
+  .cat-quota-badge.atteint { background: var(--c-err-bg); color: var(--c-err); }
+
+  /* Ligne matériel */
   .materiel-row {
     display: grid;
     grid-template-columns: 1fr auto auto;
@@ -49,11 +53,14 @@
     background: var(--c-bg);
     transition: border-color 0.15s, background 0.15s;
     cursor: pointer;
+    margin-bottom: 6px;
   }
+  .materiel-row:last-child { margin-bottom: 0; }
   .materiel-row.selected { border-color: var(--c-accent); background: var(--c-accent-bg); }
   .materiel-row.epuise { opacity: 0.45; cursor: not-allowed; }
+  .materiel-row.bloque { opacity: 0.45; cursor: not-allowed; background: #F7F6F2; }
   .mat-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .mat-nom { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mat-nom { font-size: 14px; font-weight: 500; }
   .mat-stock { font-size: 12px; color: var(--c-text-muted); }
   .mat-stock.warn { color: var(--c-warn); }
   .mat-stock.err  { color: var(--c-err); }
@@ -61,17 +68,12 @@
   .mat-badge.warn { background: var(--c-warn-bg); color: var(--c-warn); }
   .mat-badge.err  { background: var(--c-err-bg);  color: var(--c-err); }
 
-  /* Sélecteur de quantité */
   .qty-ctrl { display: none; align-items: center; gap: 6px; }
   .materiel-row.selected .qty-ctrl { display: flex; }
-  .qty-btn { width: 26px; height: 26px; border: 1px solid var(--c-border-strong); border-radius: 50%; background: var(--c-surface); cursor: pointer; font-size: 16px; line-height: 1; display: flex; align-items: center; justify-content: center; color: var(--c-accent); font-weight: 600; transition: background 0.1s; }
+  .qty-btn { width: 26px; height: 26px; border: 1px solid var(--c-border-strong); border-radius: 50%; background: var(--c-surface); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--c-accent); font-weight: 600; transition: background 0.1s; }
   .qty-btn:hover { background: var(--c-accent-bg); }
   .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .qty-val { font-size: 15px; font-weight: 600; min-width: 18px; text-align: center; color: var(--c-accent); }
-
-  /* Panier résumé */
-  .panier-vide { font-size: 13px; color: var(--c-text-muted); text-align: center; padding: 12px 0; display: none; }
-  .panier-vide.visible { display: block; }
 
   .btn-submit { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; font-family: inherit; color: #fff; background: var(--c-accent); border: none; border-radius: var(--radius); cursor: pointer; transition: opacity 0.15s; }
   .btn-submit:hover:not(:disabled) { opacity: 0.88; }
@@ -85,7 +87,7 @@
   .confirm-row span:first-child { color: var(--c-text-muted); }
   .confirm-row span:last-child { font-weight: 500; text-align: right; max-width: 65%; }
   .confirm-mat-list { margin: 6px 0 0; padding: 0; list-style: none; }
-  .confirm-mat-list li { font-size: 13px; padding: 3px 0; color: var(--c-text); }
+  .confirm-mat-list li { font-size: 13px; padding: 3px 0; }
   .confirm-mat-list li::before { content: "• "; color: var(--c-ok); }
   .btn-reset { margin-top: 1rem; font-size: 13px; color: var(--c-text-muted); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-family: inherit; }
 
@@ -101,15 +103,13 @@
   <div class="header">
     <p class="header-eyebrow">ERUN — Prêt de matériel</p>
     <h1>Réserver du matériel pédagogique</h1>
-    <p>Choisissez une période puis sélectionnez les matériels souhaités. La disponibilité est vérifiée en temps réel.</p>
+    <p>Choisissez une période puis sélectionnez les matériels. La disponibilité et les quotas par catégorie sont vérifiés en temps réel.</p>
   </div>
 
   <div class="alert err" id="alert-err" style="display:none;"></div>
   <div class="alert info" id="alert-info"><div class="spinner"></div>&nbsp;Chargement des données Grist…</div>
 
   <div id="form-section" style="display:none;">
-
-    <!-- Identité -->
     <div class="card">
       <p class="section-title">Votre identité</p>
       <div class="field">
@@ -122,7 +122,6 @@
       </div>
     </div>
 
-    <!-- Période -->
     <div class="card">
       <p class="section-title">Période scolaire</p>
       <div class="field">
@@ -132,15 +131,14 @@
       </div>
     </div>
 
-    <!-- Matériels -->
     <div class="card">
-      <p class="section-title">Matériels souhaités <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;">(cochez et ajustez la quantité)</span></p>
-      <div class="materiel-grid" id="materiel-grid">
+      <p class="section-title">Matériels souhaités</p>
+      <div id="materiel-grid">
         <p style="font-size:13px;color:var(--c-text-muted);">Choisissez d'abord une période.</p>
       </div>
     </div>
 
-    <button class="btn-submit" id="btn-submit" disabled onclick="soumettre()">Envoyer la demande</button>
+    <button class="btn-submit" id="btn-submit" disabled onclick="soumettre()">Sélectionnez au moins un matériel</button>
   </div>
 
   <div class="confirm-card" id="confirm-card">
@@ -155,15 +153,11 @@ let ecoles = [], materiels = [], periodes = [], emprunts = [];
 let selection = {}; /* { materielId: quantite } */
 let initDone = false;
 
-/* Grist stocke les dates en jours depuis epoch (86400s) */
-function gristDateVersJS(joursEpoch) {
-  if (!joursEpoch) return null;
-  return new Date(joursEpoch * 86400 * 1000);
-}
-function fmt(joursEpoch) {
-  const d = gristDateVersJS(joursEpoch);
-  if (!d || isNaN(d)) return "?";
-  return d.toLocaleDateString("fr-FR");
+/* Grist stocke les dates en jours depuis epoch */
+function fmt(j) {
+  if (!j) return "?";
+  const d = new Date(j * 86400 * 1000);
+  return isNaN(d) ? "?" : d.toLocaleDateString("fr-FR");
 }
 
 /* ---- Init Grist ---- */
@@ -199,10 +193,16 @@ async function chargerDonnees() {
 
   materiels = tMat.id.map((id, i) => ({
     id,
-    nom:       tMat.Materiel[i] || "",
-    quantite:  tMat.Quantite[i] || 0,
-    qteMax:    tMat.Qte_max_emprunt ? (tMat.Qte_max_emprunt[i] || null) : null
-  })).sort((a,b) => a.nom.localeCompare(b.nom, "fr"));
+    nom:            tMat.Materiel[i] || "",
+    quantite:       tMat.Quantite[i] || 0,
+    qteMax:         tMat.Qte_max_emprunt   ? (tMat.Qte_max_emprunt[i]   || null) : null,
+    categorie:      tMat.Categorie         ? (tMat.Categorie[i]         || "")   : "",
+    quotaCategorie: tMat.Quota_categorie   ? (tMat.Quota_categorie[i]   || null) : null
+  })).sort((a,b) => {
+    const ca = a.categorie || "zzz", cb = b.categorie || "zzz";
+    if (ca !== cb) return ca.localeCompare(cb, "fr");
+    return a.nom.localeCompare(b.nom, "fr");
+  });
 
   periodes = tPer.id.map((id, i) => ({
     id,
@@ -216,8 +216,7 @@ async function chargerDonnees() {
     materiel:     tEmp.Materiel[i],
     emprunte_le:  tEmp.Emprunte_le[i],
     retour_prevu: tEmp.Date_retour_prevue[i],
-    rendu:        tEmp.Rendu[i],
-    quantite:     tEmp.Quantite_empruntee ? (tEmp.Quantite_empruntee[i] || 1) : 1
+    rendu:        tEmp.Rendu[i]
   }));
 
   remplirSelect("f-ecole",   ecoles,   e => ({ val: e.id, label: e.nom }));
@@ -240,18 +239,24 @@ function remplirSelect(id, items, mapper) {
 
 /* ---- Dispo d'un matériel pour une période ---- */
 function dispoMateriel(mat, periode) {
-  if (!periode) return { dispo: mat.quantite, total: mat.quantite };
-  const nbEmpruntes = emprunts
-    .filter(e => {
-      if (e.materiel !== mat.id || e.rendu) return false;
-      if (!e.emprunte_le || !e.retour_prevu) return false;
-      return !(periode.fin < e.emprunte_le || periode.debut > e.retour_prevu);
-    })
-    .reduce((acc, e) => acc + (e.quantite || 1), 0);
-  return { dispo: mat.quantite - nbEmpruntes, total: mat.quantite };
+  if (!periode) return mat.quantite;
+  const utilises = emprunts.filter(e => {
+    if (e.materiel !== mat.id || e.rendu) return false;
+    if (!e.emprunte_le || !e.retour_prevu) return false;
+    return !(periode.fin < e.emprunte_le || periode.debut > e.retour_prevu);
+  }).length;
+  return mat.quantite - utilises;
 }
 
-/* ---- Affichage grille matériels ---- */
+/* Quota consommé pour une catégorie dans la sélection courante */
+function quotaCatConsomme(categorie) {
+  return Object.entries(selection).reduce((acc, [matId, qte]) => {
+    const mat = materiels.find(m => m.id === parseInt(matId));
+    return (mat && mat.categorie === categorie) ? acc + qte : acc;
+  }, 0);
+}
+
+/* ---- Affichage grille ---- */
 function afficherGrille() {
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId) || null;
@@ -259,113 +264,211 @@ function afficherGrille() {
 
   if (!periodeId) {
     grid.innerHTML = '<p style="font-size:13px;color:var(--c-text-muted);">Choisissez d\'abord une période.</p>';
+    selection = {};
+    majBouton();
     return;
   }
 
   selection = {};
+
+  /* Grouper par catégorie */
+  const cats = {};
+  materiels.forEach(mat => {
+    const cat = mat.categorie || "";
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push(mat);
+  });
+
   grid.innerHTML = "";
 
-  materiels.forEach(mat => {
-    const { dispo, total } = dispoMateriel(mat, periode);
-    const epuise = dispo <= 0;
-    const maxQte = Math.min(
-      dispo,
-      mat.qteMax !== null ? mat.qteMax : dispo
-    );
-
-    const row = document.createElement("div");
-    row.className = "materiel-row" + (epuise ? " epuise" : "");
-    row.dataset.id = mat.id;
-
-    let stockLabel, stockClass, badgeLabel, badgeClass;
-    if (epuise) {
-      stockLabel = "Indisponible sur cette période"; stockClass = "err";
-      badgeLabel = "0/" + total; badgeClass = "err";
-    } else if (dispo === 1) {
-      stockLabel = "Dernière unité disponible"; stockClass = "warn";
-      badgeLabel = "1/" + total; badgeClass = "warn";
-    } else {
-      stockLabel = dispo + " disponible(s) sur " + total;
-      stockClass = "";
-      badgeLabel = dispo + "/" + total; badgeClass = "";
-    }
-    if (!epuise && mat.qteMax) {
-      stockLabel += " · max " + mat.qteMax + " par emprunt";
+  Object.entries(cats).forEach(([cat, mats]) => {
+    /* Header catégorie */
+    if (cat) {
+      const quotaMat = mats.find(m => m.quotaCategorie);
+      const quota = quotaMat ? quotaMat.quotaCategorie : null;
+      const hdr = document.createElement("div");
+      hdr.className = "cat-header";
+      hdr.id = "cat-hdr-" + cat.replace(/\s/g,"_");
+      hdr.innerHTML = '<span>' + cat + '</span>' +
+        (quota ? '<span class="cat-quota-badge" id="cat-badge-' + cat.replace(/\s/g,"_") + '">Max ' + quota + ' dans cette catégorie</span>' : '');
+      grid.appendChild(hdr);
     }
 
-    row.innerHTML = `
-      <div class="mat-info">
-        <span class="mat-nom">${mat.nom}</span>
-        <span class="mat-stock ${stockClass}">${stockLabel}</span>
-      </div>
-      <span class="mat-badge ${badgeClass}">${badgeLabel}</span>
-      <div class="qty-ctrl">
-        <button class="qty-btn" onclick="changerQte(${mat.id}, -1, event)" id="btn-moins-${mat.id}">−</button>
-        <span class="qty-val" id="qty-${mat.id}">1</span>
-        <button class="qty-btn" onclick="changerQte(${mat.id}, +1, event)" id="btn-plus-${mat.id}" ${maxQte <= 1 ? "disabled" : ""}>+</button>
-      </div>`;
+    mats.forEach(mat => {
+      const dispo  = dispoMateriel(mat, periode);
+      const epuise = dispo <= 0;
+      const maxQte = Math.min(dispo, mat.qteMax !== null ? mat.qteMax : dispo);
 
-    if (!epuise) {
-      row.addEventListener("click", (e) => {
-        if (e.target.classList.contains("qty-btn")) return;
-        toggleMateriel(mat.id, maxQte);
-      });
-    }
-    grid.appendChild(row);
+      const row = document.createElement("div");
+      row.className = "materiel-row" + (epuise ? " epuise" : "");
+      row.dataset.id  = mat.id;
+      row.dataset.cat = mat.categorie || "";
+
+      let stockLabel, stockClass, badgeLabel, badgeClass;
+      if (epuise) {
+        stockLabel = "Indisponible sur cette période"; stockClass = "err";
+        badgeLabel = "0/" + mat.quantite; badgeClass = "err";
+      } else if (dispo === 1) {
+        stockLabel = "Dernière unité disponible"; stockClass = "warn";
+        badgeLabel = "1/" + mat.quantite; badgeClass = "warn";
+      } else {
+        stockLabel = dispo + " disponible(s) sur " + mat.quantite; stockClass = "";
+        badgeLabel = dispo + "/" + mat.quantite; badgeClass = "";
+      }
+      if (!epuise && mat.qteMax) stockLabel += " · max " + mat.qteMax + " par emprunt";
+
+      row.innerHTML =
+        '<div class="mat-info">' +
+          '<span class="mat-nom">' + mat.nom + '</span>' +
+          '<span class="mat-stock ' + stockClass + '" id="mat-stock-' + mat.id + '">' + stockLabel + '</span>' +
+        '</div>' +
+        '<span class="mat-badge ' + badgeClass + '">' + badgeLabel + '</span>' +
+        '<div class="qty-ctrl">' +
+          '<button class="qty-btn" onclick="changerQte(' + mat.id + ',-1,event)" id="btn-moins-' + mat.id + '">−</button>' +
+          '<span class="qty-val" id="qty-' + mat.id + '">1</span>' +
+          '<button class="qty-btn" onclick="changerQte(' + mat.id + ',+1,event)" id="btn-plus-' + mat.id + '" ' + (maxQte <= 1 ? "disabled" : "") + '>+</button>' +
+        '</div>';
+
+      if (!epuise) {
+        row.addEventListener("click", (e) => {
+          if (e.target.classList.contains("qty-btn")) return;
+          toggleMateriel(mat.id, maxQte, mat.categorie, mat.quotaCategorie);
+        });
+      }
+      grid.appendChild(row);
+    });
   });
 
   majBouton();
 }
 
-function toggleMateriel(matId, maxQte) {
-  const row = document.querySelector(`.materiel-row[data-id="${matId}"]`);
+function toggleMateriel(matId, maxQte, categorie, quotaCat) {
+  const row = document.querySelector('.materiel-row[data-id="' + matId + '"]');
+
   if (selection[matId]) {
+    /* Désélection */
     delete selection[matId];
     row.classList.remove("selected");
+    debloquerCategorie(categorie, quotaCat);
   } else {
+    /* Vérifier quota catégorie avant de sélectionner */
+    if (categorie && quotaCat !== null) {
+      const consomme = quotaCatConsomme(categorie);
+      if (consomme >= quotaCat) {
+        /* Quota atteint — on remplace l'article sélectionné dans cette catégorie */
+        /* (ou on bloque si quota = 1) */
+        if (quotaCat === 1) {
+          /* Désélectionner l'autre robot d'abord */
+          Object.keys(selection).forEach(id => {
+            const m = materiels.find(m => m.id === parseInt(id));
+            if (m && m.categorie === categorie) {
+              delete selection[parseInt(id)];
+              const r = document.querySelector('.materiel-row[data-id="' + id + '"]');
+              if (r) r.classList.remove("selected");
+            }
+          });
+        } else {
+          /* Bloquer */
+          afficherMsgQuota(categorie, quotaCat);
+          return;
+        }
+      }
+    }
     selection[matId] = 1;
     row.classList.add("selected");
     majQteAffichage(matId, 1, maxQte);
+    bloquerCategorieSiQuota(categorie, quotaCat);
   }
   majBouton();
+}
+
+function bloquerCategorieSiQuota(categorie, quotaCat) {
+  if (!categorie || !quotaCat) return;
+  const consomme = quotaCatConsomme(categorie);
+  const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
+
+  if (consomme >= quotaCat) {
+    /* Bloquer les autres articles non sélectionnés de cette catégorie */
+    document.querySelectorAll('.materiel-row[data-cat="' + categorie + '"]').forEach(row => {
+      const id = parseInt(row.dataset.id);
+      if (!selection[id] && !row.classList.contains("epuise")) {
+        row.classList.add("bloque");
+        const stock = document.getElementById("mat-stock-" + id);
+        if (stock) { stock.textContent = "Quota " + categorie + " atteint (max " + quotaCat + ")"; stock.className = "mat-stock err"; }
+      }
+    });
+    if (badge) badge.className = "cat-quota-badge atteint";
+  }
+}
+
+function debloquerCategorie(categorie, quotaCat) {
+  if (!categorie) return;
+  const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
+  const periodeId = parseInt(document.getElementById("f-periode").value);
+  const periode   = periodes.find(p => p.id === periodeId) || null;
+
+  document.querySelectorAll('.materiel-row[data-cat="' + categorie + '"]').forEach(row => {
+    const id  = parseInt(row.dataset.id);
+    const mat = materiels.find(m => m.id === id);
+    if (!mat || row.classList.contains("epuise")) return;
+    row.classList.remove("bloque");
+    const dispo = dispoMateriel(mat, periode);
+    const stock = document.getElementById("mat-stock-" + id);
+    if (stock) {
+      let txt = dispo + " disponible(s) sur " + mat.quantite;
+      if (mat.qteMax) txt += " · max " + mat.qteMax + " par emprunt";
+      stock.textContent = txt;
+      stock.className = "mat-stock" + (dispo === 1 ? " warn" : "");
+    }
+  });
+  if (badge) badge.className = "cat-quota-badge";
+}
+
+function afficherMsgQuota(categorie, quotaCat) {
+  /* Flash visuel sur le badge */
+  const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
+  if (badge) {
+    badge.textContent = "⚠ Max " + quotaCat + " robot(s) atteint";
+    badge.className = "cat-quota-badge atteint";
+    setTimeout(() => {
+      badge.textContent = "Max " + quotaCat + " dans cette catégorie";
+      badge.className = "cat-quota-badge atteint";
+    }, 2000);
+  }
 }
 
 function changerQte(matId, delta, e) {
   e.stopPropagation();
   if (!selection[matId]) return;
-  const mat    = materiels.find(m => m.id === matId);
+  const mat     = materiels.find(m => m.id === matId);
   const periode = periodes.find(p => p.id === parseInt(document.getElementById("f-periode").value));
-  const { dispo } = dispoMateriel(mat, periode);
-  const maxQte = Math.min(dispo, mat.qteMax !== null ? mat.qteMax : dispo);
-  const newQte = Math.max(1, Math.min(maxQte, selection[matId] + delta));
+  const dispo   = dispoMateriel(mat, periode);
+  const maxQte  = Math.min(dispo, mat.qteMax !== null ? mat.qteMax : dispo);
+  const newQte  = Math.max(1, Math.min(maxQte, selection[matId] + delta));
   selection[matId] = newQte;
   majQteAffichage(matId, newQte, maxQte);
   majBouton();
 }
 
 function majQteAffichage(matId, qte, maxQte) {
-  const el = document.getElementById("qty-" + matId);
+  const el    = document.getElementById("qty-" + matId);
   const moins = document.getElementById("btn-moins-" + matId);
   const plus  = document.getElementById("btn-plus-" + matId);
-  if (el) el.textContent = qte;
-  if (moins) moins.disabled = qte <= 1;
-  if (plus)  plus.disabled  = qte >= maxQte;
+  if (el)    el.textContent  = qte;
+  if (moins) moins.disabled  = qte <= 1;
+  if (plus)  plus.disabled   = qte >= maxQte;
 }
 
 /* ---- Période change ---- */
 function onPeriodeChange() {
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const info = document.getElementById("periode-info");
-  if (!periodeId) {
-    info.className = "periode-info";
+  const p = periodes.find(p => p.id === periodeId);
+  if (p && p.debut && p.fin) {
+    info.textContent = "Du " + fmt(p.debut) + " au " + fmt(p.fin);
+    info.className = "periode-info visible";
   } else {
-    const p = periodes.find(p => p.id === periodeId);
-    if (p && p.debut && p.fin) {
-      info.textContent = "Du " + fmt(p.debut) + " au " + fmt(p.fin);
-      info.className = "periode-info visible";
-    } else {
-      info.className = "periode-info";
-    }
+    info.className = "periode-info";
   }
   afficherGrille();
 }
@@ -420,24 +523,21 @@ async function soumettre() {
 function afficherConfirmation(nom, ecoleId, periodeId) {
   const ecole  = ecoles.find(e => e.id === ecoleId)?.nom || "";
   const periode = periodes.find(p => p.id === periodeId);
-  const per    = periode?.libelle || "";
   const dates  = periode ? "Du " + fmt(periode.debut) + " au " + fmt(periode.fin) : "";
-
   const matsHtml = Object.entries(selection).map(([matId, qte]) => {
     const mat = materiels.find(m => m.id === parseInt(matId));
     return '<li>' + (mat?.nom || matId) + (qte > 1 ? ' × ' + qte : '') + '</li>';
   }).join("");
-
   document.getElementById("form-section").style.display = "none";
   document.getElementById("confirm-card").classList.add("visible");
   document.getElementById("confirm-rows").innerHTML =
     ligne("Enseignant(e)", nom) +
     ligne("École", ecole) +
-    ligne("Période", per + " — " + dates) +
-    `<div class="confirm-row" style="flex-direction:column;align-items:flex-start;">
-      <span style="color:var(--c-text-muted);margin-bottom:4px;">Matériels réservés</span>
-      <ul class="confirm-mat-list">${matsHtml}</ul>
-    </div>`;
+    ligne("Période", (periode?.libelle || "") + " — " + dates) +
+    '<div class="confirm-row" style="flex-direction:column;align-items:flex-start;">' +
+      '<span style="color:var(--c-text-muted);margin-bottom:4px;">Matériels réservés</span>' +
+      '<ul class="confirm-mat-list">' + matsHtml + '</ul>' +
+    '</div>';
 }
 function ligne(l, v) {
   return '<div class="confirm-row"><span>' + l + '</span><span>' + v + '</span></div>';
