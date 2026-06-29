@@ -141,16 +141,6 @@ function fmt(j) {
 /* ---- Init Grist ---- */
 grist.ready({ requiredAccess: "full" });
 
-/* TEST TEMPORAIRE */
-setTimeout(async () => {
-  try {
-    const u = await grist.getUser();
-    console.log("USER TEST:", JSON.stringify(u));
-  } catch(e) {
-    console.log("getUser erreur:", e.message);
-  }
-}, 3000);
-
 async function init() {
   if (initDone) return;
   initDone = true;
