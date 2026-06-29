@@ -168,7 +168,6 @@ async function init() {
   try {
     await chargerDonnees();
      const user = await grist.getUser();
-console.log("USER:", JSON.stringify(user));     
    if (user && user.name) {
      const champNom = document.getElementById("f-nom");
      champNom.value = user.name;
@@ -176,6 +175,8 @@ console.log("USER:", JSON.stringify(user));
      champNom.style.background = "#F0EEE8";
      champNom.style.color = "#6B6860";
 }
+console.log("USER:", JSON.stringify(user));     
+
 document.getElementById("alert-info").style.display = "none";
 document.getElementById("form-section").style.display = "block";
   } catch(e) {
