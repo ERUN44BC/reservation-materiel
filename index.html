@@ -457,7 +457,17 @@ function majBouton() {
     ? "Envoyer la demande (" + nb + " matériel" + (nb > 1 ? "s" : "") + ")"
     : "Sélectionnez au moins un matériel";
 }
-
+async function trouverOuCreerEnseignant(nom, ecoleId) {
+  const tEns = await grist.docApi.fetchTable("Enseignants");
+  const idx = tEns.Nom.findIndex((n, i) =>
+    n && n.toLowerCase() === nom.toLowerCase() && tEns.Ecole[i] === ecoleId
+  );
+  if (idx !== -1) return tEns.id[idx];
+  const result = await grist.docApi.applyUserActions([
+    ["AddRecord", "Enseignants", null, { Nom: nom, Ecole: ecoleId }]
+  ]);
+  return result.retValues[0];
+}
 async function soumettre() {
   const btn = document.getElementById("btn-submit");
   btn.disabled = true; btn.textContent = "Enregistrement…";
@@ -467,7 +477,7 @@ async function soumettre() {
   const periode   = periodes.find(p => p.id === periodeId);
   const actions = Object.entries(selection).map(([matId, qte]) => [
     "AddRecord", "Emprunts", null, {
-      Enseignant: nom, Ecole: ecoleId, Materiel: parseInt(matId),
+      Enseignant: await trouverOuCreerEnseignant(nom, ecoleId), Ecole: ecoleId, Materiel: parseInt(matId),
       Periode: periodeId, Emprunte_le: periode.debut,
       Date_retour_prevue: periode.fin, Rendu: false
     }
