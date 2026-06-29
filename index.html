@@ -32,29 +32,12 @@
   input:focus, select:focus { border-color: var(--c-accent); box-shadow: 0 0 0 3px rgba(27,94,155,0.1); }
   input::placeholder { color: #AEAAA0; }
   select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6860' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
-
   .periode-info { display: none; margin-top: 8px; padding: 8px 12px; background: var(--c-accent-bg); border-radius: var(--radius); font-size: 13px; color: var(--c-accent); }
   .periode-info.visible { display: block; }
-
-  /* Catégorie header */
   .cat-header { font-size: 12px; font-weight: 600; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 6px; display: flex; align-items: center; justify-content: space-between; }
   .cat-quota-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; background: var(--c-accent-bg); color: var(--c-accent); text-transform: none; letter-spacing: 0; }
   .cat-quota-badge.atteint { background: var(--c-err-bg); color: var(--c-err); }
-
-  /* Ligne matériel */
-  .materiel-row {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    background: var(--c-bg);
-    transition: border-color 0.15s, background 0.15s;
-    cursor: pointer;
-    margin-bottom: 6px;
-  }
+  .materiel-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: var(--radius); background: var(--c-bg); transition: border-color 0.15s, background 0.15s; cursor: pointer; margin-bottom: 6px; }
   .materiel-row:last-child { margin-bottom: 0; }
   .materiel-row.selected { border-color: var(--c-accent); background: var(--c-accent-bg); }
   .materiel-row.epuise { opacity: 0.45; cursor: not-allowed; }
@@ -67,18 +50,15 @@
   .mat-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--c-ok-bg); color: var(--c-ok); white-space: nowrap; }
   .mat-badge.warn { background: var(--c-warn-bg); color: var(--c-warn); }
   .mat-badge.err  { background: var(--c-err-bg);  color: var(--c-err); }
-
   .qty-ctrl { display: none; align-items: center; gap: 6px; }
   .materiel-row.selected .qty-ctrl { display: flex; }
   .qty-btn { width: 26px; height: 26px; border: 1px solid var(--c-border-strong); border-radius: 50%; background: var(--c-surface); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--c-accent); font-weight: 600; transition: background 0.1s; }
   .qty-btn:hover { background: var(--c-accent-bg); }
   .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .qty-val { font-size: 15px; font-weight: 600; min-width: 18px; text-align: center; color: var(--c-accent); }
-
   .btn-submit { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; font-family: inherit; color: #fff; background: var(--c-accent); border: none; border-radius: var(--radius); cursor: pointer; transition: opacity 0.15s; }
   .btn-submit:hover:not(:disabled) { opacity: 0.88; }
   .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
-
   .confirm-card { background: var(--c-ok-bg); border: 1px solid #A8D8B0; border-radius: var(--radius-lg); padding: 1.5rem; display: none; }
   .confirm-card.visible { display: block; }
   .confirm-title { font-size: 16px; font-weight: 600; color: var(--c-ok); margin-bottom: 12px; }
@@ -90,7 +70,6 @@
   .confirm-mat-list li { font-size: 13px; padding: 3px 0; }
   .confirm-mat-list li::before { content: "• "; color: var(--c-ok); }
   .btn-reset { margin-top: 1rem; font-size: 13px; color: var(--c-text-muted); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; font-family: inherit; }
-
   .spinner { width: 13px; height: 13px; border: 2px solid rgba(27,94,155,0.2); border-top-color: var(--c-accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .alert { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; margin-bottom: 1rem; }
@@ -150,10 +129,9 @@
 
 <script>
 let ecoles = [], materiels = [], periodes = [], emprunts = [];
-let selection = {}; /* { materielId: quantite } */
+let selection = {};
 let initDone = false;
 
-/* Grist stocke les dates en jours depuis epoch */
 function fmt(j) {
   if (!j) return "?";
   const d = new Date(j * 1000);
@@ -162,28 +140,37 @@ function fmt(j) {
 
 /* ---- Init Grist ---- */
 grist.ready({ requiredAccess: "full" });
+
 async function init() {
   if (initDone) return;
   initDone = true;
   try {
     await chargerDonnees();
-     const user = await grist.getUser();
-   if (user && user.name) {
-     const champNom = document.getElementById("f-nom");
-     champNom.value = user.name;
-     champNom.readOnly = true;
-     champNom.style.background = "#F0EEE8";
-     champNom.style.color = "#6B6860";
-}
-console.log("USER:", JSON.stringify(user));     
 
-document.getElementById("alert-info").style.display = "none";
-document.getElementById("form-section").style.display = "block";
+    /* Pré-remplir le nom depuis le compte Grist */
+    try {
+      const user = await grist.getUser();
+      console.log("USER:", JSON.stringify(user));
+      if (user && user.name) {
+        const champNom = document.getElementById("f-nom");
+        champNom.value = user.name;
+        champNom.readOnly = true;
+        champNom.style.background = "#F0EEE8";
+        champNom.style.color = "#6B6860";
+        majBouton();
+      }
+    } catch(userErr) {
+      console.log("getUser non disponible:", userErr.message);
+    }
+
+    document.getElementById("alert-info").style.display = "none";
+    document.getElementById("form-section").style.display = "block";
   } catch(e) {
     initDone = false;
     afficherErreur("Impossible de charger les données : " + e.message);
   }
 }
+
 grist.on("ready", init);
 grist.docApi.fetchTable("Ecoles").then(() => init()).catch(() => {});
 setTimeout(init, 2000);
@@ -205,9 +192,9 @@ async function chargerDonnees() {
     id,
     nom:            tMat.Materiel[i] || "",
     quantite:       tMat.Quantite[i] || 0,
-    qteMax:         tMat.Qte_max_emprunt   ? (tMat.Qte_max_emprunt[i]   || null) : null,
-    categorie:      tMat.Categorie         ? (tMat.Categorie[i]         || "")   : "",
-    quotaCategorie: tMat.Quota_categorie   ? (tMat.Quota_categorie[i]   || null) : null
+    qteMax:         tMat.Qte_max_emprunt  ? (tMat.Qte_max_emprunt[i]  > 0 ? tMat.Qte_max_emprunt[i]  : null) : null,
+    categorie:      tMat.Categorie        ? (tMat.Categorie[i]        || "") : "",
+    quotaCategorie: tMat.Quota_categorie  ? (tMat.Quota_categorie[i]  > 0 ? tMat.Quota_categorie[i]  : null) : null
   })).sort((a,b) => {
     const ca = a.categorie || "zzz", cb = b.categorie || "zzz";
     if (ca !== cb) return ca.localeCompare(cb, "fr");
@@ -247,7 +234,6 @@ function remplirSelect(id, items, mapper) {
   });
 }
 
-/* ---- Dispo d'un matériel pour une période ---- */
 function dispoMateriel(mat, periode) {
   if (!periode) return mat.quantite;
   const utilises = emprunts.filter(e => {
@@ -258,7 +244,6 @@ function dispoMateriel(mat, periode) {
   return mat.quantite - utilises;
 }
 
-/* Quota consommé pour une catégorie dans la sélection courante */
 function quotaCatConsomme(categorie) {
   return Object.entries(selection).reduce((acc, [matId, qte]) => {
     const mat = materiels.find(m => m.id === parseInt(matId));
@@ -266,7 +251,6 @@ function quotaCatConsomme(categorie) {
   }, 0);
 }
 
-/* ---- Affichage grille ---- */
 function afficherGrille() {
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId) || null;
@@ -274,14 +258,10 @@ function afficherGrille() {
 
   if (!periodeId) {
     grid.innerHTML = '<p style="font-size:13px;color:var(--c-text-muted);">Choisissez d\'abord une période.</p>';
-    selection = {};
-    majBouton();
-    return;
+    selection = {}; majBouton(); return;
   }
 
   selection = {};
-
-  /* Grouper par catégorie */
   const cats = {};
   materiels.forEach(mat => {
     const cat = mat.categorie || "";
@@ -292,7 +272,6 @@ function afficherGrille() {
   grid.innerHTML = "";
 
   Object.entries(cats).forEach(([cat, mats]) => {
-    /* Header catégorie */
     if (cat) {
       const quotaMat = mats.find(m => m.quotaCategorie);
       const quota = quotaMat ? quotaMat.quotaCategorie : null;
@@ -308,7 +287,6 @@ function afficherGrille() {
       const dispo  = dispoMateriel(mat, periode);
       const epuise = dispo <= 0;
       const maxQte = Math.min(dispo, mat.qteMax !== null ? mat.qteMax : dispo);
-
       const row = document.createElement("div");
       row.className = "materiel-row" + (epuise ? " epuise" : "");
       row.dataset.id  = mat.id;
@@ -348,27 +326,20 @@ function afficherGrille() {
       grid.appendChild(row);
     });
   });
-
   majBouton();
 }
 
 function toggleMateriel(matId, maxQte, categorie, quotaCat) {
   const row = document.querySelector('.materiel-row[data-id="' + matId + '"]');
-
   if (selection[matId]) {
-    /* Désélection */
     delete selection[matId];
     row.classList.remove("selected");
     debloquerCategorie(categorie, quotaCat);
   } else {
-    /* Vérifier quota catégorie avant de sélectionner */
     if (categorie && quotaCat !== null) {
       const consomme = quotaCatConsomme(categorie);
       if (consomme >= quotaCat) {
-        /* Quota atteint — on remplace l'article sélectionné dans cette catégorie */
-        /* (ou on bloque si quota = 1) */
         if (quotaCat === 1) {
-          /* Désélectionner l'autre robot d'abord */
           Object.keys(selection).forEach(id => {
             const m = materiels.find(m => m.id === parseInt(id));
             if (m && m.categorie === categorie) {
@@ -378,9 +349,7 @@ function toggleMateriel(matId, maxQte, categorie, quotaCat) {
             }
           });
         } else {
-          /* Bloquer */
-          afficherMsgQuota(categorie, quotaCat);
-          return;
+          afficherMsgQuota(categorie, quotaCat); return;
         }
       }
     }
@@ -396,9 +365,7 @@ function bloquerCategorieSiQuota(categorie, quotaCat) {
   if (!categorie || !quotaCat) return;
   const consomme = quotaCatConsomme(categorie);
   const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
-
   if (consomme >= quotaCat) {
-    /* Bloquer les autres articles non sélectionnés de cette catégorie */
     document.querySelectorAll('.materiel-row[data-cat="' + categorie + '"]').forEach(row => {
       const id = parseInt(row.dataset.id);
       if (!selection[id] && !row.classList.contains("epuise")) {
@@ -416,7 +383,6 @@ function debloquerCategorie(categorie, quotaCat) {
   const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId) || null;
-
   document.querySelectorAll('.materiel-row[data-cat="' + categorie + '"]').forEach(row => {
     const id  = parseInt(row.dataset.id);
     const mat = materiels.find(m => m.id === id);
@@ -435,15 +401,11 @@ function debloquerCategorie(categorie, quotaCat) {
 }
 
 function afficherMsgQuota(categorie, quotaCat) {
-  /* Flash visuel sur le badge */
   const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
   if (badge) {
     badge.textContent = "⚠ Max " + quotaCat + " robot(s) atteint";
     badge.className = "cat-quota-badge atteint";
-    setTimeout(() => {
-      badge.textContent = "Max " + quotaCat + " dans cette catégorie";
-      badge.className = "cat-quota-badge atteint";
-    }, 2000);
+    setTimeout(() => { badge.textContent = "Max " + quotaCat + " dans cette catégorie"; }, 2000);
   }
 }
 
@@ -464,12 +426,11 @@ function majQteAffichage(matId, qte, maxQte) {
   const el    = document.getElementById("qty-" + matId);
   const moins = document.getElementById("btn-moins-" + matId);
   const plus  = document.getElementById("btn-plus-" + matId);
-  if (el)    el.textContent  = qte;
-  if (moins) moins.disabled  = qte <= 1;
-  if (plus)  plus.disabled   = qte >= maxQte;
+  if (el)    el.textContent = qte;
+  if (moins) moins.disabled = qte <= 1;
+  if (plus)  plus.disabled  = qte >= maxQte;
 }
 
-/* ---- Période change ---- */
 function onPeriodeChange() {
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const info = document.getElementById("periode-info");
@@ -483,7 +444,6 @@ function onPeriodeChange() {
   afficherGrille();
 }
 
-/* ---- Validation ---- */
 function majBouton() {
   const complet =
     document.getElementById("f-nom").value.trim() &&
@@ -498,28 +458,20 @@ function majBouton() {
     : "Sélectionnez au moins un matériel";
 }
 
-/* ---- Soumission ---- */
 async function soumettre() {
   const btn = document.getElementById("btn-submit");
   btn.disabled = true; btn.textContent = "Enregistrement…";
-
   const nom       = document.getElementById("f-nom").value.trim();
   const ecoleId   = parseInt(document.getElementById("f-ecole").value);
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId);
-
   const actions = Object.entries(selection).map(([matId, qte]) => [
     "AddRecord", "Emprunts", null, {
-      Enseignant:         nom,
-      Ecole:              ecoleId,
-      Materiel:           parseInt(matId),
-      Periode:            periodeId,
-      Emprunte_le:        periode.debut,
-      Date_retour_prevue: periode.fin,
-      Rendu:              false
+      Enseignant: nom, Ecole: ecoleId, Materiel: parseInt(matId),
+      Periode: periodeId, Emprunte_le: periode.debut,
+      Date_retour_prevue: periode.fin, Rendu: false
     }
   ]);
-
   try {
     await grist.docApi.applyUserActions(actions);
     afficherConfirmation(nom, ecoleId, periodeId);
@@ -529,11 +481,10 @@ async function soumettre() {
   }
 }
 
-/* ---- Confirmation ---- */
 function afficherConfirmation(nom, ecoleId, periodeId) {
-  const ecole  = ecoles.find(e => e.id === ecoleId)?.nom || "";
+  const ecole   = ecoles.find(e => e.id === ecoleId)?.nom || "";
   const periode = periodes.find(p => p.id === periodeId);
-  const dates  = periode ? "Du " + fmt(periode.debut) + " au " + fmt(periode.fin) : "";
+  const dates   = periode ? "Du " + fmt(periode.debut) + " au " + fmt(periode.fin) : "";
   const matsHtml = Object.entries(selection).map(([matId, qte]) => {
     const mat = materiels.find(m => m.id === parseInt(matId));
     return '<li>' + (mat?.nom || matId) + (qte > 1 ? ' × ' + qte : '') + '</li>';
@@ -541,37 +492,31 @@ function afficherConfirmation(nom, ecoleId, periodeId) {
   document.getElementById("form-section").style.display = "none";
   document.getElementById("confirm-card").classList.add("visible");
   document.getElementById("confirm-rows").innerHTML =
-    ligne("Enseignant(e)", nom) +
-    ligne("École", ecole) +
+    ligne("Enseignant(e)", nom) + ligne("École", ecole) +
     ligne("Période", (periode?.libelle || "") + " — " + dates) +
     '<div class="confirm-row" style="flex-direction:column;align-items:flex-start;">' +
       '<span style="color:var(--c-text-muted);margin-bottom:4px;">Matériels réservés</span>' +
-      '<ul class="confirm-mat-list">' + matsHtml + '</ul>' +
-    '</div>';
+      '<ul class="confirm-mat-list">' + matsHtml + '</ul></div>';
 }
+
 function ligne(l, v) {
   return '<div class="confirm-row"><span>' + l + '</span><span>' + v + '</span></div>';
 }
 
-/* ---- Réinitialisation ---- */
 function reinitialiser() {
   document.getElementById("form-section").style.display = "block";
   document.getElementById("confirm-card").classList.remove("visible");
   ["f-nom","f-ecole","f-periode"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("periode-info").className = "periode-info";
-  selection = {};
-  afficherGrille();
-  majBouton();
+  selection = {}; afficherGrille(); majBouton();
 }
 
-/* ---- Erreur ---- */
 function afficherErreur(msg) {
   const el = document.getElementById("alert-err");
   el.textContent = msg; el.style.display = "block";
   document.getElementById("alert-info").style.display = "none";
 }
 
-/* ---- Écouteurs ---- */
 document.getElementById("f-periode").addEventListener("change", onPeriodeChange);
 ["f-nom","f-ecole"].forEach(id =>
   document.getElementById(id).addEventListener("change", majBouton));
