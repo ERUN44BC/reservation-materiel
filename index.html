@@ -168,7 +168,8 @@ async function init() {
   try {
     await chargerDonnees();
      const user = await grist.getUser();
-     if (user && user.name) {
+console.log("USER:", JSON.stringify(user));     
+   if (user && user.name) {
      const champNom = document.getElementById("f-nom");
      champNom.value = user.name;
      champNom.readOnly = true;
