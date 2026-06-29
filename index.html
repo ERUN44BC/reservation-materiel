@@ -167,8 +167,16 @@ async function init() {
   initDone = true;
   try {
     await chargerDonnees();
-    document.getElementById("alert-info").style.display = "none";
-    document.getElementById("form-section").style.display = "block";
+     const user = await grist.getUser();
+     if (user && user.name) {
+     const champNom = document.getElementById("f-nom");
+     champNom.value = user.name;
+     champNom.readOnly = true;
+     champNom.style.background = "#F0EEE8";
+     champNom.style.color = "#6B6860";
+}
+document.getElementById("alert-info").style.display = "none";
+document.getElementById("form-section").style.display = "block";
   } catch(e) {
     initDone = false;
     afficherErreur("Impossible de charger les données : " + e.message);
