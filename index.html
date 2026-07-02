@@ -475,7 +475,7 @@ async function soumettre() {
   const ecoleId   = parseInt(document.getElementById("f-ecole").value);
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId);
-  const actions = Object.entries(selection).map(([matId, qte])) => [
+  const actions = Object.entries(selection).map(([matId, qte]) => [
     "AddRecord", "Emprunts", null, {
       Enseignant: await trouverOuCreerEnseignant(nom, ecoleId), Ecole: ecoleId, Materiel: parseInt(matId),
       Periode: periodeId, Emprunte_le: periode.debut,
