@@ -56,6 +56,30 @@
   .qty-btn:hover { background: var(--c-accent-bg); }
   .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .qty-val { font-size: 15px; font-weight: 600; min-width: 18px; text-align: center; color: var(--c-accent); }
+
+  /* Modalité */
+  .modalite-card { display: none; }
+  .modalite-card.visible { display: block; }
+  .modalite-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--c-border); border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .modalite-option:last-child { margin-bottom: 0; }
+  .modalite-option.selected { border-color: var(--c-accent); background: var(--c-accent-bg); }
+  .modalite-option input[type=radio] { margin-top: 2px; flex-shrink: 0; accent-color: var(--c-accent); }
+  .modalite-label { font-size: 14px; font-weight: 500; }
+  .modalite-desc { font-size: 12px; color: var(--c-text-muted); margin-top: 2px; }
+
+  /* Alertes modalité */
+  .alerte-accompagnement { display: none; margin-top: 10px; padding: 10px 14px; border-radius: var(--radius); font-size: 13px; }
+  .alerte-accompagnement.info { background: var(--c-accent-bg); color: var(--c-accent); border: 1px solid #B5D4F4; display: block; }
+  .alerte-accompagnement.warn { background: var(--c-warn-bg); color: var(--c-warn); border: 1px solid #E8C97A; display: block; }
+
+  /* Quota écoles */
+  .quota-ecoles-bar { margin-top: 8px; }
+  .quota-ecoles-label { font-size: 12px; color: var(--c-text-muted); margin-bottom: 4px; }
+  .quota-ecoles-track { height: 6px; background: var(--c-border); border-radius: 3px; overflow: hidden; }
+  .quota-ecoles-fill { height: 100%; background: var(--c-accent); border-radius: 3px; transition: width 0.3s; }
+  .quota-ecoles-fill.warn { background: var(--c-warn); }
+  .quota-ecoles-fill.err  { background: var(--c-err); }
+
   .btn-submit { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; font-family: inherit; color: #fff; background: var(--c-accent); border: none; border-radius: var(--radius); cursor: pointer; transition: opacity 0.15s; }
   .btn-submit:hover:not(:disabled) { opacity: 0.88; }
   .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -82,13 +106,15 @@
   <div class="header">
     <p class="header-eyebrow">ERUN — Prêt de matériel</p>
     <h1>Réserver du matériel pédagogique</h1>
-    <p>Choisissez une période puis sélectionnez les matériels. La disponibilité et les quotas par catégorie sont vérifiés en temps réel.</p>
+    <p>Choisissez une période, sélectionnez les matériels et précisez votre besoin d'accompagnement.</p>
   </div>
 
   <div class="alert err" id="alert-err" style="display:none;"></div>
   <div class="alert info" id="alert-info"><div class="spinner"></div>&nbsp;Chargement des données Grist…</div>
 
   <div id="form-section" style="display:none;">
+
+    <!-- Identité -->
     <div class="card">
       <p class="section-title">Votre identité</p>
       <div class="field">
@@ -101,6 +127,7 @@
       </div>
     </div>
 
+    <!-- Période -->
     <div class="card">
       <p class="section-title">Période scolaire</p>
       <div class="field">
@@ -110,11 +137,52 @@
       </div>
     </div>
 
+    <!-- Matériels -->
     <div class="card">
       <p class="section-title">Matériels souhaités</p>
       <div id="materiel-grid">
         <p style="font-size:13px;color:var(--c-text-muted);">Choisissez d'abord une période.</p>
       </div>
+    </div>
+
+    <!-- Modalité — visible seulement si robot sélectionné -->
+    <div class="card modalite-card" id="modalite-card">
+      <p class="section-title">Type d'accompagnement <span class="req">*</span></p>
+
+      <!-- Quota écoles -->
+      <div id="quota-ecoles-container" style="margin-bottom:12px;display:none;">
+        <div class="quota-ecoles-bar">
+          <div class="quota-ecoles-label" id="quota-ecoles-label"></div>
+          <div class="quota-ecoles-track"><div class="quota-ecoles-fill" id="quota-ecoles-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="modalite-option" id="mo-proximite" onclick="selectionnerModalite('Accompagnement de proximité')">
+        <input type="radio" name="modalite" value="Accompagnement de proximité" id="r-proximite" />
+        <div>
+          <div class="modalite-label">Accompagnement de proximité</div>
+          <div class="modalite-desc">L'ERUN vient co-animer certaines séances. Un échange par mail, par téléphone ou en présence est à prévoir en amont afin de définir le cadre de l'accompagnement. </div>
+        </div>
+      </div>
+
+      <div class="modalite-option" id="mo-accompagne" onclick="selectionnerModalite('Emprunt accompagné')">
+        <input type="radio" name="modalite" value="Emprunt accompagné" id="r-accompagne" />
+        <div>
+          <div class="modalite-label">Emprunt accompagné</div>
+          <div class="modalite-desc">L'ERUN vient présenter des séquences possibles à mettre en œuvre.</div>
+        </div>
+      </div>
+
+      <div class="modalite-option" id="mo-simple" onclick="selectionnerModalite('Emprunt simple')">
+        <input type="radio" name="modalite" value="Emprunt simple" id="r-simple" />
+        <div>
+          <div class="modalite-label">Emprunt simple</div>
+          <div class="modalite-desc">Vous utilisez le matériel en autonomie, sans accompagnement de l'ERUN.</div>
+        </div>
+      </div>
+
+      <!-- Alerte selon modalité -->
+      <div class="alerte-accompagnement" id="alerte-modalite"></div>
     </div>
 
     <button class="btn-submit" id="btn-submit" disabled onclick="soumettre()">Sélectionnez au moins un matériel</button>
@@ -130,6 +198,7 @@
 <script>
 let ecoles = [], materiels = [], periodes = [], emprunts = [];
 let selection = {};
+let modaliteChoisie = "";
 let initDone = false;
 
 function fmt(j) {
@@ -146,23 +215,6 @@ async function init() {
   initDone = true;
   try {
     await chargerDonnees();
-
-    /* Pré-remplir le nom depuis le compte Grist */
-    try {
-      const user = await grist.getUser();
-      console.log("USER:", JSON.stringify(user));
-      if (user && user.name) {
-        const champNom = document.getElementById("f-nom");
-        champNom.value = user.name;
-        champNom.readOnly = true;
-        champNom.style.background = "#F0EEE8";
-        champNom.style.color = "#6B6860";
-        majBouton();
-      }
-    } catch(userErr) {
-      console.log("getUser non disponible:", userErr.message);
-    }
-
     document.getElementById("alert-info").style.display = "none";
     document.getElementById("form-section").style.display = "block";
   } catch(e) {
@@ -205,15 +257,18 @@ async function chargerDonnees() {
     id,
     libelle: tPer.Libelle[i] || "",
     debut:   tPer.Date_debut ? tPer.Date_debut[i] : null,
-    fin:     tPer.Date_fin   ? tPer.Date_fin[i]   : null
+    fin:     tPer.Date_fin   ? tPer.Date_fin[i]   : null,
+    quotaEcoles: tPer.Quota_ecoles_accompagnement ? (tPer.Quota_ecoles_accompagnement[i] || null) : null
   }));
 
   emprunts = tEmp.id.map((id, i) => ({
     id,
     materiel:     tEmp.Materiel[i],
+    ecole:        tEmp.Ecole[i],
     emprunte_le:  tEmp.Emprunte_le[i],
     retour_prevu: tEmp.Date_retour_prevue[i],
-    rendu:        tEmp.Rendu[i]
+    rendu:        tEmp.Rendu[i],
+    modalite:     tEmp.Modalite ? (tEmp.Modalite[i] || "") : ""
   }));
 
   remplirSelect("f-ecole",   ecoles,   e => ({ val: e.id, label: e.nom }));
@@ -234,6 +289,7 @@ function remplirSelect(id, items, mapper) {
   });
 }
 
+/* ---- Disponibilité matériel ---- */
 function dispoMateriel(mat, periode) {
   if (!periode) return mat.quantite;
   const utilises = emprunts.filter(e => {
@@ -244,6 +300,117 @@ function dispoMateriel(mat, periode) {
   return mat.quantite - utilises;
 }
 
+/* ---- Quota écoles accompagnement ---- */
+function calculerQuotaEcoles(periodeId, ecoleIdCourante) {
+  const periode = periodes.find(p => p.id === periodeId);
+  if (!periode || !periode.quotaEcoles) return null;
+
+  /* Écoles distinctes avec accompagnement de proximité sur cette période */
+  const ecolesAccompagnees = new Set(
+    emprunts.filter(e =>
+      e.modalite === "Accompagnement de proximité" &&
+      !e.rendu &&
+      e.emprunte_le && e.retour_prevu &&
+      !(periode.fin < e.emprunte_le || periode.debut > e.retour_prevu)
+    ).map(e => e.ecole)
+  );
+
+  const ecoleDejaPresente = ecolesAccompagnees.has(ecoleIdCourante);
+  const nbEcoles = ecolesAccompagnees.size;
+
+  return {
+    quota: periode.quotaEcoles,
+    nbEcoles,
+    ecoleDejaPresente,
+    /* Si l'école est déjà dans la liste, pas de nouveau déplacement */
+    disponible: ecoleDejaPresente || nbEcoles < periode.quotaEcoles
+  };
+}
+
+function majQuotaEcoles() {
+  const periodeId  = parseInt(document.getElementById("f-periode").value);
+  const ecoleId    = parseInt(document.getElementById("f-ecole").value);
+  const container  = document.getElementById("quota-ecoles-container");
+  const label      = document.getElementById("quota-ecoles-label");
+  const fill       = document.getElementById("quota-ecoles-fill");
+
+  if (!periodeId || !ecoleId) { container.style.display = "none"; return; }
+
+  const info = calculerQuotaEcoles(periodeId, ecoleId);
+  if (!info) { container.style.display = "none"; return; }
+
+  container.style.display = "block";
+  const pct = Math.min(100, Math.round(info.nbEcoles / info.quota * 100));
+
+  if (info.ecoleDejaPresente) {
+    label.textContent = "Votre école est déjà accompagnée sur cette période ✓";
+    fill.style.width = pct + "%";
+    fill.className = "quota-ecoles-fill";
+  } else if (!info.disponible) {
+    label.textContent = "Quota d'accompagnement atteint : " + info.nbEcoles + "/" + info.quota + " écoles";
+    fill.style.width = "100%";
+    fill.className = "quota-ecoles-fill err";
+  } else {
+    label.textContent = info.nbEcoles + " école(s) accompagnée(s) sur " + info.quota + " possible(s)";
+    fill.style.width = pct + "%";
+    fill.className = "quota-ecoles-fill" + (pct >= 75 ? " warn" : "");
+  }
+}
+
+/* ---- Modalité ---- */
+function robotSelectionne() {
+  return Object.keys(selection).some(matId => {
+    const mat = materiels.find(m => m.id === parseInt(matId));
+    return mat && mat.categorie === "Robot";
+  });
+}
+
+function majModalite() {
+  const card = document.getElementById("modalite-card");
+  if (robotSelectionne()) {
+    card.className = "card modalite-card visible";
+    majQuotaEcoles();
+  } else {
+    card.className = "card modalite-card";
+    modaliteChoisie = "";
+    /* Décocher tous les radios */
+    document.querySelectorAll('input[name="modalite"]').forEach(r => r.checked = false);
+    document.querySelectorAll('.modalite-option').forEach(o => o.classList.remove("selected"));
+    document.getElementById("alerte-modalite").className = "alerte-accompagnement";
+  }
+}
+
+function selectionnerModalite(valeur) {
+  modaliteChoisie = valeur;
+  document.querySelectorAll('.modalite-option').forEach(o => o.classList.remove("selected"));
+  document.querySelector('input[value="' + valeur + '"]').checked = true;
+
+  const periodeId = parseInt(document.getElementById("f-periode").value);
+  const ecoleId   = parseInt(document.getElementById("f-ecole").value);
+  const alerte    = document.getElementById("alerte-modalite");
+
+  if (valeur === "Accompagnement de proximité") {
+    document.getElementById("mo-proximite").classList.add("selected");
+    const info = calculerQuotaEcoles(periodeId, ecoleId);
+    if (info && !info.disponible) {
+      alerte.className = "alerte-accompagnement warn";
+      alerte.textContent = "⚠ Le quota d'accompagnement de proximité est atteint pour cette période (" + info.nbEcoles + "/" + info.quota + " écoles). Il est possible que l'accompagnement n'ait pas lieu. L'ERUN vous contactera pour confirmer.";
+    } else {
+      alerte.className = "alerte-accompagnement info";
+      alerte.textContent = "ℹ Votre demande d'accompagnement de proximité sera confirmée par l'ERUN par email.";
+    }
+  } else if (valeur === "Emprunt accompagné") {
+    document.getElementById("mo-accompagne").classList.add("selected");
+    alerte.className = "alerte-accompagnement info";
+    alerte.textContent = "ℹ L'ERUN viendra présenter des séquences possibles en lien avec le matériel emprunté. Elle vous contactera pour convenir d'une date.";
+  } else {
+    document.getElementById("mo-simple").classList.add("selected");
+    alerte.className = "alerte-accompagnement";
+  }
+  majBouton();
+}
+
+/* ---- Quota catégorie ---- */
 function quotaCatConsomme(categorie) {
   return Object.entries(selection).reduce((acc, [matId, qte]) => {
     const mat = materiels.find(m => m.id === parseInt(matId));
@@ -251,6 +418,7 @@ function quotaCatConsomme(categorie) {
   }, 0);
 }
 
+/* ---- Grille matériels ---- */
 function afficherGrille() {
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId) || null;
@@ -258,7 +426,7 @@ function afficherGrille() {
 
   if (!periodeId) {
     grid.innerHTML = '<p style="font-size:13px;color:var(--c-text-muted);">Choisissez d\'abord une période.</p>';
-    selection = {}; majBouton(); return;
+    selection = {}; majModalite(); majBouton(); return;
   }
 
   selection = {};
@@ -268,7 +436,6 @@ function afficherGrille() {
     if (!cats[cat]) cats[cat] = [];
     cats[cat].push(mat);
   });
-
   grid.innerHTML = "";
 
   Object.entries(cats).forEach(([cat, mats]) => {
@@ -277,7 +444,6 @@ function afficherGrille() {
       const quota = quotaMat ? quotaMat.quotaCategorie : null;
       const hdr = document.createElement("div");
       hdr.className = "cat-header";
-      hdr.id = "cat-hdr-" + cat.replace(/\s/g,"_");
       hdr.innerHTML = '<span>' + cat + '</span>' +
         (quota ? '<span class="cat-quota-badge" id="cat-badge-' + cat.replace(/\s/g,"_") + '">Max ' + quota + ' dans cette catégorie</span>' : '');
       grid.appendChild(hdr);
@@ -326,7 +492,7 @@ function afficherGrille() {
       grid.appendChild(row);
     });
   });
-  majBouton();
+  majModalite(); majBouton();
 }
 
 function toggleMateriel(matId, maxQte, categorie, quotaCat) {
@@ -334,7 +500,7 @@ function toggleMateriel(matId, maxQte, categorie, quotaCat) {
   if (selection[matId]) {
     delete selection[matId];
     row.classList.remove("selected");
-    debloquerCategorie(categorie, quotaCat);
+    debloquerCategorie(categorie);
   } else {
     if (categorie && quotaCat !== null) {
       const consomme = quotaCatConsomme(categorie);
@@ -348,9 +514,7 @@ function toggleMateriel(matId, maxQte, categorie, quotaCat) {
               if (r) r.classList.remove("selected");
             }
           });
-        } else {
-          afficherMsgQuota(categorie, quotaCat); return;
-        }
+        } else { afficherMsgQuota(categorie, quotaCat); return; }
       }
     }
     selection[matId] = 1;
@@ -358,14 +522,13 @@ function toggleMateriel(matId, maxQte, categorie, quotaCat) {
     majQteAffichage(matId, 1, maxQte);
     bloquerCategorieSiQuota(categorie, quotaCat);
   }
-  majBouton();
+  majModalite(); majBouton();
 }
 
 function bloquerCategorieSiQuota(categorie, quotaCat) {
   if (!categorie || !quotaCat) return;
-  const consomme = quotaCatConsomme(categorie);
   const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
-  if (consomme >= quotaCat) {
+  if (quotaCatConsomme(categorie) >= quotaCat) {
     document.querySelectorAll('.materiel-row[data-cat="' + categorie + '"]').forEach(row => {
       const id = parseInt(row.dataset.id);
       if (!selection[id] && !row.classList.contains("epuise")) {
@@ -378,11 +541,10 @@ function bloquerCategorieSiQuota(categorie, quotaCat) {
   }
 }
 
-function debloquerCategorie(categorie, quotaCat) {
+function debloquerCategorie(categorie) {
   if (!categorie) return;
   const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
-  const periodeId = parseInt(document.getElementById("f-periode").value);
-  const periode   = periodes.find(p => p.id === periodeId) || null;
+  const periode = periodes.find(p => p.id === parseInt(document.getElementById("f-periode").value)) || null;
   document.querySelectorAll('.materiel-row[data-cat="' + categorie + '"]').forEach(row => {
     const id  = parseInt(row.dataset.id);
     const mat = materiels.find(m => m.id === id);
@@ -403,7 +565,7 @@ function debloquerCategorie(categorie, quotaCat) {
 function afficherMsgQuota(categorie, quotaCat) {
   const badge = document.getElementById("cat-badge-" + categorie.replace(/\s/g,"_"));
   if (badge) {
-    badge.textContent = "⚠ Max " + quotaCat + " robot(s) atteint";
+    badge.textContent = "⚠ Max " + quotaCat + " atteint";
     badge.className = "cat-quota-badge atteint";
     setTimeout(() => { badge.textContent = "Max " + quotaCat + " dans cette catégorie"; }, 2000);
   }
@@ -412,13 +574,12 @@ function afficherMsgQuota(categorie, quotaCat) {
 function changerQte(matId, delta, e) {
   e.stopPropagation();
   if (!selection[matId]) return;
-  const mat     = materiels.find(m => m.id === matId);
+  const mat    = materiels.find(m => m.id === matId);
   const periode = periodes.find(p => p.id === parseInt(document.getElementById("f-periode").value));
-  const dispo   = dispoMateriel(mat, periode);
-  const maxQte  = Math.min(dispo, mat.qteMax !== null ? mat.qteMax : dispo);
-  const newQte  = Math.max(1, Math.min(maxQte, selection[matId] + delta));
-  selection[matId] = newQte;
-  majQteAffichage(matId, newQte, maxQte);
+  const dispo  = dispoMateriel(mat, periode);
+  const maxQte = Math.min(dispo, mat.qteMax !== null ? mat.qteMax : dispo);
+  selection[matId] = Math.max(1, Math.min(maxQte, selection[matId] + delta));
+  majQteAffichage(matId, selection[matId], maxQte);
   majBouton();
 }
 
@@ -438,25 +599,32 @@ function onPeriodeChange() {
   if (p && p.debut && p.fin) {
     info.textContent = "Du " + fmt(p.debut) + " au " + fmt(p.fin);
     info.className = "periode-info visible";
-  } else {
-    info.className = "periode-info";
-  }
+  } else { info.className = "periode-info"; }
   afficherGrille();
 }
 
 function majBouton() {
+  const avecRobot   = robotSelectionne();
+  const modaliteOk  = !avecRobot || modaliteChoisie !== "";
   const complet =
     document.getElementById("f-nom").value.trim() &&
     document.getElementById("f-ecole").value &&
     document.getElementById("f-periode").value &&
-    Object.keys(selection).length > 0;
+    Object.keys(selection).length > 0 &&
+    modaliteOk;
   const btn = document.getElementById("btn-submit");
   btn.disabled = !complet;
   const nb = Object.keys(selection).length;
-  btn.textContent = complet
-    ? "Envoyer la demande (" + nb + " matériel" + (nb > 1 ? "s" : "") + ")"
-    : "Sélectionnez au moins un matériel";
+  if (!document.getElementById("f-periode").value || nb === 0) {
+    btn.textContent = "Sélectionnez au moins un matériel";
+  } else if (avecRobot && !modaliteChoisie) {
+    btn.textContent = "Choisissez un type d'accompagnement";
+  } else if (complet) {
+    btn.textContent = "Envoyer la demande (" + nb + " matériel" + (nb > 1 ? "s" : "") + ")";
+  }
 }
+
+/* ---- Enseignant : chercher ou créer ---- */
 async function trouverOuCreerEnseignant(nom, ecoleId) {
   const tEns = await grist.docApi.fetchTable("Enseignants");
   const idx = tEns.Nom.findIndex((n, i) =>
@@ -468,36 +636,42 @@ async function trouverOuCreerEnseignant(nom, ecoleId) {
   ]);
   return result.retValues[0];
 }
+
+/* ---- Soumission ---- */
 async function soumettre() {
   const btn = document.getElementById("btn-submit");
   btn.disabled = true; btn.textContent = "Enregistrement…";
+
   const nom       = document.getElementById("f-nom").value.trim();
   const ecoleId   = parseInt(document.getElementById("f-ecole").value);
   const periodeId = parseInt(document.getElementById("f-periode").value);
   const periode   = periodes.find(p => p.id === periodeId);
-  const actions = await Promise.all(
-  Object.entries(selection).map(async ([matId, qte]) => [
-    "AddRecord", "Emprunts", null, {
-      Enseignant: await trouverOuCreerEnseignant(nom, ecoleId),
-      Ecole: ecoleId,
-      Materiel: parseInt(matId),
-      Periode: periodeId,
-      Emprunte_le: periode.debut,
-      Date_retour_prevue: periode.fin,
-      Rendu: false
-    }
-  ])
-);
+  const modalite  = modaliteChoisie || "Emprunt simple";
+
   try {
+    const enseignantId = await trouverOuCreerEnseignant(nom, ecoleId);
+    const actions = Object.entries(selection).map(([matId, qte]) => [
+      "AddRecord", "Emprunts", null, {
+        Enseignant:         enseignantId,
+        Ecole:              ecoleId,
+        Materiel:           parseInt(matId),
+        Periode:            periodeId,
+        Emprunte_le:        periode.debut,
+        Date_retour_prevue: periode.fin,
+        Modalite:           modalite,
+        Rendu:              false
+      }
+    ]);
     await grist.docApi.applyUserActions(actions);
-    afficherConfirmation(nom, ecoleId, periodeId);
+    afficherConfirmation(nom, ecoleId, periodeId, modalite);
   } catch(e) {
     btn.disabled = false; btn.textContent = "Envoyer la demande";
     afficherErreur("Erreur lors de l'enregistrement : " + e.message);
   }
 }
 
-function afficherConfirmation(nom, ecoleId, periodeId) {
+/* ---- Confirmation ---- */
+function afficherConfirmation(nom, ecoleId, periodeId, modalite) {
   const ecole   = ecoles.find(e => e.id === ecoleId)?.nom || "";
   const periode = periodes.find(p => p.id === periodeId);
   const dates   = periode ? "Du " + fmt(periode.debut) + " au " + fmt(periode.fin) : "";
@@ -505,34 +679,48 @@ function afficherConfirmation(nom, ecoleId, periodeId) {
     const mat = materiels.find(m => m.id === parseInt(matId));
     return '<li>' + (mat?.nom || matId) + (qte > 1 ? ' × ' + qte : '') + '</li>';
   }).join("");
+
+  let confirmMsg = "";
+  if (modalite === "Accompagnement de proximité") {
+    confirmMsg = '<div style="margin-top:10px;padding:8px 12px;background:#E6F0FB;border-radius:6px;font-size:12px;color:#1B5E9B;">L\'ERUN vous contactera par email pour confirmer l\'accompagnement de proximité.</div>';
+  } else if (modalite === "Emprunt accompagné") {
+    confirmMsg = '<div style="margin-top:10px;padding:8px 12px;background:#E6F0FB;border-radius:6px;font-size:12px;color:#1B5E9B;">L\'ERUN vous contactera pour convenir d\'une date d\'intervention.</div>';
+  }
+
   document.getElementById("form-section").style.display = "none";
   document.getElementById("confirm-card").classList.add("visible");
   document.getElementById("confirm-rows").innerHTML =
     ligne("Enseignant(e)", nom) + ligne("École", ecole) +
     ligne("Période", (periode?.libelle || "") + " — " + dates) +
+    ligne("Accompagnement", modalite) +
     '<div class="confirm-row" style="flex-direction:column;align-items:flex-start;">' +
       '<span style="color:var(--c-text-muted);margin-bottom:4px;">Matériels réservés</span>' +
-      '<ul class="confirm-mat-list">' + matsHtml + '</ul></div>';
+      '<ul class="confirm-mat-list">' + matsHtml + '</ul>' +
+    '</div>' + confirmMsg;
 }
 
 function ligne(l, v) {
   return '<div class="confirm-row"><span>' + l + '</span><span>' + v + '</span></div>';
 }
 
+/* ---- Réinitialisation ---- */
 function reinitialiser() {
   document.getElementById("form-section").style.display = "block";
   document.getElementById("confirm-card").classList.remove("visible");
   ["f-nom","f-ecole","f-periode"].forEach(id => document.getElementById(id).value = "");
   document.getElementById("periode-info").className = "periode-info";
-  selection = {}; afficherGrille(); majBouton();
+  selection = {}; modaliteChoisie = "";
+  afficherGrille(); majBouton();
 }
 
+/* ---- Erreur ---- */
 function afficherErreur(msg) {
   const el = document.getElementById("alert-err");
   el.textContent = msg; el.style.display = "block";
   document.getElementById("alert-info").style.display = "none";
 }
 
+/* ---- Écouteurs ---- */
 document.getElementById("f-periode").addEventListener("change", onPeriodeChange);
 ["f-nom","f-ecole"].forEach(id =>
   document.getElementById(id).addEventListener("change", majBouton));
